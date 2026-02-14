@@ -1,0 +1,14 @@
+# outputs
+*.exe
+*.o
+*.obj
+bin/
+
+# binaries
+*.dll
+
+# junk
+.vscode/
+*.swp
+*.tmp
+imgui.ini
