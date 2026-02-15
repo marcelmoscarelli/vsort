@@ -23,7 +23,7 @@ Get the following with your package manager:
 Then build and run:
 
 - `make`
-- `./bin/vsort`
+- `make run`
 
 ### Windows
 
@@ -36,4 +36,4 @@ Get the following:
 Then, finally, build and run:
 
 - `make`
-- Run `.\bin\test.exe` from a terminal (or double-click it?).
+- `make run`
