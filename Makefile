@@ -27,8 +27,13 @@ all: $(TARGET)
 run: $(TARGET)
 	./$(TARGET)
 
-run-dgpu: $(TARGET)
+ifeq ($(shell uname -s),Linux)
+run-nvidia: $(TARGET)
 	__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia ./$(TARGET)
+else
+run-nvidia:
+	@echo "run-nvidia is only available on Linux"
+endif
 
 $(TARGET): $(OBJ) | $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(SDL_LIBS)
@@ -42,4 +47,4 @@ clean:
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-.PHONY: all clean run run-dgpu
+.PHONY: all clean run run-nvidia
