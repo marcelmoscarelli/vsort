@@ -12,16 +12,21 @@
 
 // Global constants
 static const int ARRAY_SIZE = 250;
-static const int WINDOW_WIDTH = 1600;
-static const int WINDOW_HEIGHT = 900;
-static const float SORTING_WINDOW_HEIGHT_RATIO = 0.85f;
+static const int WINDOW_WIDTH = 1280;
+static const int WINDOW_HEIGHT = 720;
+static const int STATS_LINE_COUNT = 5;
 static const float PADDING = 5.0f;
+static const float SECTION_GAP = PADDING;
 static const float FONT_SIZE = 17.0f;
 
 // Global variables
 static unsigned int g_num_swaps = 0;
 static unsigned int g_num_compar = 0;
 static float g_fps = 0.0f;
+static bool g_sorting_paused = true;
+static bool g_sorting_done = false;
+static int g_window_width = WINDOW_WIDTH;
+static int g_window_height = WINDOW_HEIGHT;
 SDL_Window* g_window = nullptr;
 SDL_Renderer* g_renderer = nullptr;
 
@@ -31,7 +36,8 @@ static int init_imgui();
 static void init_array(std::vector<int>& arr);
 static void render_bars(const std::vector<int>& arr, int hi1, int hi2, ImU32 color1, ImU32 color2);
 static void render_stats();
-static void render_options();
+static void render_controls(std::vector<int>& arr);
+static float calc_stats_height();
 
 int main(int argc, char** argv) {
     (void)argc;
@@ -58,7 +64,6 @@ int main(int argc, char** argv) {
     int i = 0;
     int j = 0;
     bool swapped_in_pass = false;
-    bool sorting_done = false;
 
     // Variables for FPS calculation
     Uint32 fps_last_ticks = SDL_GetTicks();
@@ -80,12 +85,30 @@ int main(int argc, char** argv) {
                 event.window.windowID == SDL_GetWindowID(g_window)) {
                 done = true;
             }
+            if (event.type == SDL_WINDOWEVENT &&
+                event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED &&
+                event.window.windowID == SDL_GetWindowID(g_window)) {
+                g_window_width = event.window.data1;
+                g_window_height = event.window.data2;
+                ImGui::GetIO().DisplaySize = ImVec2((float)g_window_width, (float)g_window_height);
+            }
+            if (event.type == SDL_KEYDOWN &&
+                event.key.keysym.sym == SDLK_SPACE &&
+                event.key.repeat == 0) {
+                if (!g_sorting_done) {
+                    g_sorting_paused = !g_sorting_paused;
+                } else {
+                    init_array(arr);
+                    g_sorting_done = false;
+                    g_sorting_paused = true;
+                }
+            }
         }
 
         // One bubble sort step per frame (to be changed later)
         int hi1 = -1;
         int hi2 = -1;
-        if (!sorting_done && i < ARRAY_SIZE - 1) {
+        if (!g_sorting_done && !g_sorting_paused && i < ARRAY_SIZE - 1) {
             hi1 = j;
             hi2 = j + 1;
             ++g_num_compar;
@@ -98,7 +121,7 @@ int main(int argc, char** argv) {
             if (j >= ARRAY_SIZE - i - 1) {
                 if (!swapped_in_pass) {
                     i = ARRAY_SIZE; // done
-                    sorting_done = true;
+                    g_sorting_done = true;
                 } else {
                     swapped_in_pass = false;
                     j = 0;
@@ -106,7 +129,9 @@ int main(int argc, char** argv) {
                 }
             }
         } else if (i >= ARRAY_SIZE - 1) {
-            sorting_done = true;
+            g_sorting_done = true;
+            i = 0;
+            j = 0;
         }
 
         // Start ImGui frame with the SDL2 backend
@@ -116,7 +141,7 @@ int main(int argc, char** argv) {
 
         // Render VSort stuff
         render_stats();
-        render_options();
+        render_controls(arr);
         render_bars(arr, hi1, hi2, IM_COL32(255, 60, 60, 255), IM_COL32(255, 200, 0, 255));
 
         // Render ImGui and present the frame
@@ -136,8 +161,8 @@ int main(int argc, char** argv) {
             fps_last_ticks = now;
         }
 
-        // Cap frame rate to ~30 FPS when sorting is done to reduce CPU usage
-        if (sorting_done) {
+        // Cap frame rate to ~30 FPS when sorting is paused or done to reduce CPU usage
+        if (g_sorting_done || g_sorting_paused) {
             Uint32 frame_time = SDL_GetTicks() - frame_start;
             if (frame_time < 33) {
                 SDL_Delay(33 - frame_time);
@@ -162,7 +187,7 @@ static int init_sdl() {
         return 1;
     }
 
-    g_window = SDL_CreateWindow("ImGui VSort", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_RESIZABLE);
+    g_window = SDL_CreateWindow("vsort", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_RESIZABLE);
     if (!g_window) {
         std::fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
         SDL_Quit();
@@ -177,6 +202,7 @@ static int init_sdl() {
         return 1;
     }
 
+    SDL_GetWindowSize(g_window, &g_window_width, &g_window_height);
     return 0;
 }
 
@@ -229,10 +255,11 @@ static void init_array(std::vector<int>& arr) {
 }
 
 static void render_bars(const std::vector<int>& arr, int hi1, int hi2, ImU32 color1, ImU32 color2) {
-    const float sorting_height = (float)WINDOW_HEIGHT * SORTING_WINDOW_HEIGHT_RATIO - (PADDING * 2.0f);
+    const float stats_height = calc_stats_height();
+    const float sorting_height = (float)g_window_height - stats_height - (PADDING * 2.0f) - SECTION_GAP;
 
     ImGui::SetNextWindowPos(ImVec2(PADDING, PADDING), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2((float)WINDOW_WIDTH - (PADDING * 2.0f), sorting_height), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2((float)g_window_width - (PADDING * 2.0f), sorting_height), ImGuiCond_Always);
 
     ImGuiWindowFlags flags = /*ImGuiWindowFlags_NoTitleBar | */ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse;
     ImGui::Begin("Sorting", nullptr, flags);
@@ -263,12 +290,12 @@ static void render_bars(const std::vector<int>& arr, int hi1, int hi2, ImU32 col
 }
 
 static void render_stats() {
-    const float sorting_height = (float)WINDOW_HEIGHT * SORTING_WINDOW_HEIGHT_RATIO;
-    const float stats_y = PADDING + sorting_height;
-    const float stats_height = (float)WINDOW_HEIGHT - sorting_height - (PADDING * 2.0f);
+    const float stats_height = calc_stats_height();
+    const float sorting_height = (float)g_window_height - stats_height - (PADDING * 2.0f) - SECTION_GAP;
+    const float stats_y = PADDING + sorting_height + SECTION_GAP;
 
     ImGui::SetNextWindowPos(ImVec2(PADDING, stats_y), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2((float)WINDOW_WIDTH/2 - (PADDING * 2.0f), stats_height), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2((float)g_window_width/2 - (PADDING * 2.0f), stats_height), ImGuiCond_Always);
 
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse;
     ImGui::Begin("Stats", nullptr, flags);
@@ -281,18 +308,35 @@ static void render_stats() {
     ImGui::End();
 }
 
-static void render_options() {
-    const float sorting_height = (float)WINDOW_HEIGHT * SORTING_WINDOW_HEIGHT_RATIO;
-    const float stats_y = PADDING + sorting_height;
-    const float stats_height = (float)WINDOW_HEIGHT - sorting_height - (PADDING * 2.0f);
+static void render_controls(std::vector<int>& arr) {
+    const float stats_height = calc_stats_height();
+    const float sorting_height = (float)g_window_height - stats_height - (PADDING * 2.0f) - SECTION_GAP;
+    const float stats_y = PADDING + sorting_height + SECTION_GAP;
 
-    ImGui::SetNextWindowPos(ImVec2(WINDOW_WIDTH/2 + PADDING, stats_y), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2((float)WINDOW_WIDTH/2 - (PADDING * 2.0f), stats_height), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(g_window_width/2 + PADDING, stats_y), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2((float)g_window_width/2 - (PADDING * 2.0f), stats_height), ImGuiCond_Always);
 
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse;
-    ImGui::Begin("Options", nullptr, flags);
+    ImGui::Begin("Controls", nullptr, flags);
 
-    ImGui::Text("TO DO."); // Placeholder
+    if (ImGui::Button((g_sorting_paused || g_sorting_done) ? "Paused.." : "Running!")) {
+        if (!g_sorting_done) {
+            g_sorting_paused = !g_sorting_paused;
+        }
+    }
+
+    if (g_sorting_done &&ImGui::Button("Reset..?")) {
+        init_array(arr);
+        g_sorting_done = false;
+        g_sorting_paused = true;
+    }
 
     ImGui::End();
+}
+
+static float calc_stats_height() {
+    const ImGuiStyle& style = ImGui::GetStyle();
+    const float line_height = ImGui::GetTextLineHeightWithSpacing();
+    const float content_height = (STATS_LINE_COUNT * line_height) - style.ItemSpacing.y;
+    return (style.WindowPadding.y * 2.0f) + content_height;
 }
