@@ -11,13 +11,14 @@
 #include "imgui/backends/imgui_impl_sdlrenderer2.h"
 
 // Global constants
-static const int ARRAY_SIZE = 250;
+static const int ARRAY_SIZE = 125;
 static const int WINDOW_WIDTH = 1280;
 static const int WINDOW_HEIGHT = 720;
 static const int STATS_LINE_COUNT = 5;
 static const float PADDING = 5.0f;
 static const float SECTION_GAP = PADDING;
 static const float FONT_SIZE = 17.0f;
+static const float BAR_SPACING = 2.0f;
 
 // Global variables
 static unsigned int g_num_swaps = 0;
@@ -268,13 +269,12 @@ static void render_bars(const std::vector<int>& arr, int hi1, int hi2, ImU32 col
     ImVec2 p = ImGui::GetCursorScreenPos();
     ImVec2 avail = ImGui::GetContentRegionAvail();
 
-    const float space = 1.0f;
-    const float bar_width = (avail.x - (ARRAY_SIZE - 1) * space) / ARRAY_SIZE;
+    const float bar_width = (avail.x - (ARRAY_SIZE - 1) * BAR_SPACING) / ARRAY_SIZE;
     const float bar_max_height = avail.y;
 
     for (int i = 0; i < ARRAY_SIZE; ++i) {
         float h = (arr[i] / (float)ARRAY_SIZE) * bar_max_height;
-        float x0 = p.x + i * (bar_width + space);
+        float x0 = p.x + i * (bar_width + BAR_SPACING);
         float y0 = p.y + (bar_max_height - h);
         float x1 = x0 + bar_width;
         float y1 = p.y + bar_max_height;
