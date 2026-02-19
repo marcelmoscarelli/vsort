@@ -1,8 +1,9 @@
 #pragma once
 
-#include <vector>
-#include <string>
+#include <string> // std::string
+#include <vector> // std::vector
 
+// Simple class for returning the state of a single step of the sorting algorithm back to the caller
 struct SortStepResult {
     int hi1 = -1;
     int hi2 = -1;
@@ -11,6 +12,7 @@ struct SortStepResult {
     bool done = false;
 };
 
+// Base class for sorting algorithms. Each algorithm should inherit from this and implement the name(), reset() and step() methods.
 class SortingAlgo {
 public:
     virtual ~SortingAlgo() = default;
@@ -28,6 +30,7 @@ protected:
     bool m_done = false;
 };
 
+// Class for Bubble Sort algorithm
 class BubbleSort : public SortingAlgo {
 public:
     const char* name() const override;
@@ -42,6 +45,7 @@ private:
     bool m_swapped_in_pass = false;
 };
 
+// Class for Insertion Sort algorithm
 class InsertionSort : public SortingAlgo {
 public:
     const char* name() const override;
@@ -55,6 +59,7 @@ private:
     int m_j = 1;
 };
 
+// Class for Cocktail Sort algorithm
 class CocktailSort : public SortingAlgo {
 public:
     const char* name() const override;
@@ -71,6 +76,7 @@ private:
     bool m_swapped_in_pass = false;
 };
 
+// Class for Comb Sort algorithm
 class CombSort : public SortingAlgo {
 public:
     const char* name() const override;
