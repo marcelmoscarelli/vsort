@@ -13,7 +13,7 @@
 #include "imgui/backends/imgui_impl_sdlrenderer2.h"
 
 // Global constants
-static const int ARRAY_SIZE = 125;
+static const int ARRAY_SIZE = 250;
 static const int WINDOW_WIDTH = 1280;
 static const int WINDOW_HEIGHT = 720;
 static const int STATS_LINE_COUNT = 5;
@@ -65,6 +65,7 @@ int main(int argc, char** argv) {
     algorithms.emplace_back(std::make_unique<BubbleSort>());
     algorithms.emplace_back(std::make_unique<InsertionSort>());
     algorithms.emplace_back(std::make_unique<CocktailSort>());
+    algorithms.emplace_back(std::make_unique<CombSort>());
     int selected_algo = 0;
     SortingAlgo* sorting_algo = algorithms[selected_algo].get();
     sorting_algo->reset(ARRAY_SIZE);

@@ -59,10 +59,6 @@ SortStepResult BubbleSort::step(std::vector<int>& arr) {
     return result;
 }
 
-bool BubbleSort::is_done() const {
-    return m_done;
-}
-
 const char* InsertionSort::name() const {
     return "Insertion Sort";
 }
@@ -117,10 +113,6 @@ SortStepResult InsertionSort::step(std::vector<int>& arr) {
     }
 
     return result;
-}
-
-bool InsertionSort::is_done() const {
-    return m_done;
 }
 
 const char* CocktailSort::name() const {
@@ -208,6 +200,63 @@ SortStepResult CocktailSort::step(std::vector<int>& arr) {
     return result;
 }
 
-bool CocktailSort::is_done() const {
-    return m_done;
+const char* CombSort::name() const {
+    return "Comb Sort";
+}
+
+int CombSort::next_gap(int gap) {
+    gap = (gap * 10) / 13;
+    if (gap < 1) {
+        return 1;
+    }
+    return gap;
+}
+
+void CombSort::reset(int size) {
+    m_size = size;
+    m_gap = next_gap(size);
+    m_i = 0;
+    m_swapped_in_pass = false;
+    m_done = (size <= 1);
+}
+
+SortStepResult CombSort::step(std::vector<int>& arr) {
+    SortStepResult result;
+
+    if (m_done || m_size <= 1 || (int)arr.size() < m_size) {
+        result.done = true;
+        m_done = true;
+        return result;
+    }
+
+    if (m_i >= m_size - m_gap) {
+        if (m_gap == 1 && !m_swapped_in_pass) {
+            m_done = true;
+            result.done = true;
+            return result;
+        }
+
+        m_gap = next_gap(m_gap);
+        m_i = 0;
+        m_swapped_in_pass = false;
+    }
+
+    result.hi1 = m_i;
+    result.hi2 = m_i + m_gap;
+    result.compared = true;
+
+    if (arr[m_i] > arr[m_i + m_gap]) {
+        std::swap(arr[m_i], arr[m_i + m_gap]);
+        result.swapped = true;
+        m_swapped_in_pass = true;
+    }
+
+    ++m_i;
+
+    if (m_i >= m_size - m_gap && m_gap == 1 && !m_swapped_in_pass) {
+        m_done = true;
+        result.done = true;
+    }
+
+    return result;
 }
