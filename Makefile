@@ -16,7 +16,7 @@ IMGUI_SRC := \
 	$(IMGUI_BACKENDS)/imgui_impl_sdl2.cpp \
 	$(IMGUI_BACKENDS)/imgui_impl_sdlrenderer2.cpp
 
-SRC := vsort.cpp $(IMGUI_SRC)
+SRC := vsort.cpp sorting_algo.cpp $(IMGUI_SRC)
 OBJ := $(SRC:.cpp=.o)
 
 BIN_DIR := bin
