@@ -33,3 +33,15 @@ Get the following:
 ## Run
 
 - `make run`
+
+## Controls
+
+Apart from the GUI, there are a few keyboard shortcuts that let you control the simulation without touching the mouse:
+
+- Backspace: Shuffle
+
+- Space bar: Start/Stop
+
+- Up arrow and down arrow: Cycle through algorithms
+
+- Esc: Quit

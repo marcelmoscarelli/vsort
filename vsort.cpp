@@ -172,7 +172,10 @@ static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::un
             ImGui::GetIO().DisplaySize = ImVec2((float)g_window_width, (float)g_window_height);
         }
         if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
-            if (event.key.keysym.sym == SDLK_SPACE) {
+            if (event.key.keysym.sym == SDLK_ESCAPE) {
+                done = true;
+            }
+            else if (event.key.keysym.sym == SDLK_SPACE) {
                 const bool is_running = !g_sorting_done && !g_sorting_paused;
                 if (is_running) {
                     g_sorting_paused = true;
