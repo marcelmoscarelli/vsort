@@ -246,3 +246,71 @@ SortStepResult CombSort::step(std::vector<int>& arr) {
 
     return result;
 }
+
+/* SELECTION SORT IMPLEMENTATION */
+const char* SelectionSort::name() const {
+    return "Selection Sort";
+}
+
+void SelectionSort::reset(int size) {
+    m_size = size;
+    m_i = 0;
+    m_j = 1;
+    m_min_idx = 0;
+    m_ready_to_swap = false;
+    m_done = (size <= 1);
+}
+
+SortStepResult SelectionSort::step(std::vector<int>& arr) {
+    SortStepResult result;
+
+    // Base case checks
+    if (m_done || m_size <= 1 || (int)arr.size() < m_size) {
+        result.done = true;
+        m_done = true;
+        return result;
+    }
+    if (m_i >= m_size - 1) {
+        m_done = true;
+        result.done = true;
+        return result;
+    }
+
+    // Compare the current candidate minimum with the current element
+    if (!m_ready_to_swap) {
+        result.hi1 = m_min_idx;
+        result.hi2 = m_j;
+        result.compared = true;
+        if (arr[m_j] < arr[m_min_idx]) {
+            m_min_idx = m_j;
+        }
+        ++m_j;
+
+        // Check if the end of the unsorted portion was reached
+        if (m_j >= m_size) {
+            m_ready_to_swap = true;
+        }
+
+        return result;
+    }
+
+    // Swap the selected minimum into place and advance to the next position
+    result.hi1 = m_i;
+    result.hi2 = m_min_idx;
+    if (m_min_idx != m_i) {
+        std::swap(arr[m_i], arr[m_min_idx]);
+        result.swapped = true;
+    }
+
+    ++m_i;
+    if (m_i >= m_size - 1) {
+        m_done = true;
+        result.done = true;
+        return result;
+    }
+
+    m_min_idx = m_i;
+    m_j = m_i + 1;
+    m_ready_to_swap = false;
+    return result;
+}

@@ -37,6 +37,8 @@ SDL_Renderer* g_renderer = nullptr;
 static int init_sdl();
 static int init_imgui();
 static void init_array(std::vector<int>& arr);
+static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::unique_ptr<SortingAlgo>>& algorithms, int& selected_algo);
+static void switch_algorithm(std::vector<int>& arr, std::vector<std::unique_ptr<SortingAlgo>>& algorithms, int& selected_algo, int new_algo);
 static void render_bars(const std::vector<int>& arr, int hi1, int hi2, ImU32 color1, ImU32 color2);
 static void render_stats(const char* algo_name);
 static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<SortingAlgo>>& algorithms, int& selected_algo);
@@ -64,6 +66,7 @@ int main(int argc, char** argv) {
     std::vector<std::unique_ptr<SortingAlgo>> algorithms;
     algorithms.emplace_back(std::make_unique<BubbleSort>());
     algorithms.emplace_back(std::make_unique<InsertionSort>());
+    algorithms.emplace_back(std::make_unique<SelectionSort>());
     algorithms.emplace_back(std::make_unique<CocktailSort>());
     algorithms.emplace_back(std::make_unique<CombSort>());
     int selected_algo = 0;
@@ -80,36 +83,7 @@ int main(int argc, char** argv) {
     while (!done) {
         Uint32 frame_start = SDL_GetTicks();
 
-        // SDL event handling
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            ImGui_ImplSDL2_ProcessEvent(&event);
-            if (event.type == SDL_QUIT) {
-                done = true;
-            }
-            if (event.type == SDL_WINDOWEVENT && 
-                event.window.event == SDL_WINDOWEVENT_CLOSE &&
-                event.window.windowID == SDL_GetWindowID(g_window)) {
-                done = true;
-            }
-            if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED &&
-                event.window.windowID == SDL_GetWindowID(g_window)) {
-                g_window_width = event.window.data1;
-                g_window_height = event.window.data2;
-                ImGui::GetIO().DisplaySize = ImVec2((float)g_window_width, (float)g_window_height);
-            }
-            if (event.type == SDL_KEYDOWN &&
-                event.key.keysym.sym == SDLK_SPACE &&
-                event.key.repeat == 0) {
-                if (g_sorting_done) {
-                    g_sorting_done = false;
-                    g_sorting_paused = false;
-                } else {
-                    g_sorting_paused = !g_sorting_paused;
-                }
-            }
-        }
+        handle_events(done, arr, algorithms, selected_algo);
 
         // One sorting step per frame
         int hi1 = -1;
@@ -176,6 +150,60 @@ int main(int argc, char** argv) {
     SDL_Quit();
 
     return 0;
+}
+
+static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::unique_ptr<SortingAlgo>>& algorithms, int& selected_algo) {
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        ImGui_ImplSDL2_ProcessEvent(&event);
+        if (event.type == SDL_QUIT) {
+            done = true;
+        }
+        if (event.type == SDL_WINDOWEVENT && 
+            event.window.event == SDL_WINDOWEVENT_CLOSE &&
+            event.window.windowID == SDL_GetWindowID(g_window)) {
+            done = true;
+        }
+        if (event.type == SDL_WINDOWEVENT &&
+            event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED &&
+            event.window.windowID == SDL_GetWindowID(g_window)) {
+            g_window_width = event.window.data1;
+            g_window_height = event.window.data2;
+            ImGui::GetIO().DisplaySize = ImVec2((float)g_window_width, (float)g_window_height);
+        }
+        if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
+            if (event.key.keysym.sym == SDLK_SPACE) {
+                const bool is_running = !g_sorting_done && !g_sorting_paused;
+                if (is_running) {
+                    g_sorting_paused = true;
+                } else {
+                    if (g_sorting_done) {
+                        init_array(arr);
+                        algorithms[selected_algo]->reset(ARRAY_SIZE);
+                    }
+                    g_sorting_done = false;
+                    g_sorting_paused = false;
+                }
+            } else if (event.key.keysym.sym == SDLK_BACKSPACE) {
+                init_array(arr);
+                algorithms[selected_algo]->reset(ARRAY_SIZE);
+                g_sorting_done = true;
+                g_sorting_paused = true;
+            } else if (event.key.keysym.sym == SDLK_UP) {
+                const int algo_count = (int)algorithms.size();
+                if (algo_count > 0) {
+                    const int new_algo = (selected_algo - 1 + algo_count) % algo_count;
+                    switch_algorithm(arr, algorithms, selected_algo, new_algo);
+                }
+            } else if (event.key.keysym.sym == SDLK_DOWN) {
+                const int algo_count = (int)algorithms.size();
+                if (algo_count > 0) {
+                    const int new_algo = (selected_algo + 1) % algo_count;
+                    switch_algorithm(arr, algorithms, selected_algo, new_algo);
+                }
+            }
+        }
+    }
 }
 
 static int init_sdl() {
@@ -251,6 +279,24 @@ static void init_array(std::vector<int>& arr) {
     g_num_compar = 0;
 }
 
+static void switch_algorithm(std::vector<int>& arr, std::vector<std::unique_ptr<SortingAlgo>>& algorithms, int& selected_algo, int new_algo) {
+    if (new_algo < 0 || new_algo >= (int)algorithms.size() || new_algo == selected_algo) {
+        return;
+    }
+
+    const bool is_running = !g_sorting_done && !g_sorting_paused;
+    selected_algo = new_algo;
+    algorithms[selected_algo]->reset(ARRAY_SIZE);
+    if (is_running) {
+        init_array(arr);
+        g_sorting_done = true;
+        g_sorting_paused = true;
+    } else {
+        g_num_swaps = 0;
+        g_num_compar = 0;
+    }
+}
+
 static void render_bars(const std::vector<int>& arr, int hi1, int hi2, ImU32 color1, ImU32 color2) {
     const float stats_height = calc_stats_height();
     const float sorting_height = (float)g_window_height - stats_height - (PADDING * 2.0f) - SECTION_GAP;
@@ -315,39 +361,50 @@ static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<S
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse;
     ImGui::Begin("Controls", nullptr, flags);
 
-    if (ImGui::Button(g_sorting_paused ? "Paused.." : "Running!")) {
-        if (g_sorting_done) {
+    const char* current_name = algorithms[selected_algo]->name();
+    float max_algo_name_width = 0.0f;
+    for (const auto& algo : algorithms) {
+        max_algo_name_width = std::max(max_algo_name_width, ImGui::CalcTextSize(algo->name()).x);
+    }
+    const float combo_width = std::clamp(max_algo_name_width + 40.0f, 120.0f, 220.0f);
+    ImGui::SetNextItemWidth(combo_width);
+    if (ImGui::BeginCombo("##Algorithm", current_name)) {
+        for (int i = 0; i < (int)algorithms.size(); ++i) {
+            const bool is_selected = (selected_algo == i);
+            if (ImGui::Selectable(algorithms[i]->name(), is_selected)) {
+                switch_algorithm(arr, algorithms, selected_algo, i);
+            }
+            if (is_selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    ImGui::SameLine();
+    const bool is_running = !g_sorting_done && !g_sorting_paused;
+    const float start_label_width = ImGui::CalcTextSize("Start").x;
+    const float stop_label_width = ImGui::CalcTextSize("Stop").x;
+    const float action_button_width = std::max(start_label_width, stop_label_width) + (ImGui::GetStyle().FramePadding.x * 2.0f) + 16.0f;
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
+    if (ImGui::Button(is_running ? "Stop" : "Start", ImVec2(action_button_width, 0.0f))) {
+        if (is_running) {
+            g_sorting_paused = true;
+        } else {
+            if (g_sorting_done) {
+                init_array(arr);
+                algorithms[selected_algo]->reset(ARRAY_SIZE);
+            }
             g_sorting_done = false;
             g_sorting_paused = false;
-        } else {
-            g_sorting_paused = !g_sorting_paused;
         }
     }
-
-    if (ImGui::Button("Stop")) {
+    ImGui::PopStyleVar();
+    ImGui::SameLine();
+    if (ImGui::Button("Shuffle")) {
         init_array(arr);
         algorithms[selected_algo]->reset(ARRAY_SIZE);
         g_sorting_done = true;
         g_sorting_paused = true;
-    }
-
-    if (g_sorting_done) {
-        const char* current_name = algorithms[selected_algo]->name();
-        if (ImGui::BeginCombo("Algorithm", current_name)) {
-            for (int i = 0; i < (int)algorithms.size(); ++i) {
-                const bool is_selected = (selected_algo == i);
-                if (ImGui::Selectable(algorithms[i]->name(), is_selected)) {
-                    selected_algo = i;
-                    algorithms[selected_algo]->reset(ARRAY_SIZE);
-                    g_sorting_done = true;
-                    g_sorting_paused = true;
-                }
-                if (is_selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
     }
 
     ImGui::End();

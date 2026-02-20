@@ -92,3 +92,19 @@ private:
     int m_i = 0;
     bool m_swapped_in_pass = false;
 };
+
+// Class for Selection Sort algorithm
+class SelectionSort : public SortingAlgo {
+public:
+    const char* name() const override;
+
+    void reset(int size) override;
+    SortStepResult step(std::vector<int>& arr) override;
+
+private:
+    int m_size = 0;
+    int m_i = 0;
+    int m_j = 1;
+    int m_min_idx = 0;
+    bool m_ready_to_swap = false;
+};
