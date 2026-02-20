@@ -13,7 +13,9 @@
 #include "imgui/backends/imgui_impl_sdlrenderer2.h"
 
 // Global constants
-static const int ARRAY_SIZE = 250;
+static const int FPS = 60; // 0=uncapped
+static const float FPS_DELAY = (FPS > 0) ? (1000.0f / FPS) : 0.0f;
+static const int ARRAY_SIZE = 75;
 static const int WINDOW_WIDTH = 1280;
 static const int WINDOW_HEIGHT = 720;
 static const int STATS_LINE_COUNT = 5;
@@ -132,11 +134,21 @@ int main(int argc, char** argv) {
             fps_last_ticks = now;
         }
 
-        // Cap frame rate to ~30 FPS when sorting is paused or done to reduce CPU usage
-        if (g_sorting_done || g_sorting_paused) {
+        // Frame cap policy
+        Uint32 target_frame_ms = 0;
+        if (g_sorting_done || g_sorting_paused) { // 30 fps when paused/done to reduce load whilst keeping responsiveness
+            target_frame_ms = 33;
+        } else if (FPS_DELAY > 0.0f) {
+            target_frame_ms = (Uint32)FPS_DELAY;
+            if (target_frame_ms == 0) {
+                target_frame_ms = 1;
+            }
+        }
+
+        if (target_frame_ms > 0) {
             Uint32 frame_time = SDL_GetTicks() - frame_start;
-            if (frame_time < 33) {
-                SDL_Delay(33 - frame_time);
+            if (frame_time < target_frame_ms) {
+                SDL_Delay(target_frame_ms - frame_time);
             }
         }
     }
@@ -181,7 +193,12 @@ static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::un
                     g_sorting_paused = true;
                 } else {
                     if (g_sorting_done) {
-                        init_array(arr);
+                        if (std::is_sorted(arr.begin(), arr.end())) {
+                            init_array(arr);
+                        } else {
+                            g_num_swaps = 0;
+                            g_num_compar = 0;
+                        }
                         algorithms[selected_algo]->reset(ARRAY_SIZE);
                     }
                     g_sorting_done = false;
@@ -287,17 +304,13 @@ static void switch_algorithm(std::vector<int>& arr, std::vector<std::unique_ptr<
         return;
     }
 
-    const bool is_running = !g_sorting_done && !g_sorting_paused;
+    (void)arr;
     selected_algo = new_algo;
     algorithms[selected_algo]->reset(ARRAY_SIZE);
-    if (is_running) {
-        init_array(arr);
-        g_sorting_done = true;
-        g_sorting_paused = true;
-    } else {
-        g_num_swaps = 0;
-        g_num_compar = 0;
-    }
+    g_num_swaps = 0;
+    g_num_compar = 0;
+    g_sorting_done = true;
+    g_sorting_paused = true;
 }
 
 static void render_bars(const std::vector<int>& arr, int hi1, int hi2, ImU32 color1, ImU32 color2) {
@@ -394,7 +407,12 @@ static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<S
             g_sorting_paused = true;
         } else {
             if (g_sorting_done) {
-                init_array(arr);
+                if (std::is_sorted(arr.begin(), arr.end())) {
+                    init_array(arr);
+                } else {
+                    g_num_swaps = 0;
+                    g_num_compar = 0;
+                }
                 algorithms[selected_algo]->reset(ARRAY_SIZE);
             }
             g_sorting_done = false;
