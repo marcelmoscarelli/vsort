@@ -38,10 +38,12 @@ Get the following:
 
 Apart from the GUI, there are a few keyboard shortcuts that let you control the simulation without touching the mouse:
 
-- Backspace: Shuffle
+- Backspace: Shuffle the array
 
-- Space bar: Start/Stop
+- Space bar: Start or stop sorting
 
 - Up arrow and down arrow: Cycle through algorithms
+
+- Left arrow and right arrow: Resize the array
 
 - Esc: Quit

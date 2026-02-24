@@ -192,7 +192,7 @@ SortStepResult CocktailSort::step(std::vector<int>& arr) {
 
 /* COMB SORT IMPLEMENTATION */
 const char* CombSort::name() const {
-    return "Comb Sort";
+    return "Comb Sort (1.3 gap)";
 }
 
 // Shrinks the gap by a factor of 1.3 and ensures it never goes below 1

@@ -13,9 +13,12 @@
 #include "imgui/backends/imgui_impl_sdlrenderer2.h"
 
 // Global constants
-static const int FPS = 60; // 0=uncapped
+static const int FPS = 0; // 0=uncapped
 static const float FPS_DELAY = (FPS > 0) ? (1000.0f / FPS) : 0.0f;
-static const int ARRAY_SIZE = 75;
+static const int DEFAULT_ARRAY_SIZE = 100;
+static const int MIN_ARRAY_SIZE = 50;
+static const int MAX_ARRAY_SIZE = 500;
+static const int ARRAY_SIZE_STEP = 50;
 static const int WINDOW_WIDTH = 1280;
 static const int WINDOW_HEIGHT = 720;
 static const int STATS_LINE_COUNT = 5;
@@ -32,6 +35,7 @@ static bool g_sorting_paused = true;
 static bool g_sorting_done = true;
 static int g_window_width = WINDOW_WIDTH;
 static int g_window_height = WINDOW_HEIGHT;
+static int g_array_size = DEFAULT_ARRAY_SIZE;
 SDL_Window* g_window = nullptr;
 SDL_Renderer* g_renderer = nullptr;
 
@@ -41,6 +45,7 @@ static int init_imgui();
 static void init_array(std::vector<int>& arr);
 static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::unique_ptr<SortingAlgo>>& algorithms, int& selected_algo);
 static void switch_algorithm(std::vector<int>& arr, std::vector<std::unique_ptr<SortingAlgo>>& algorithms, int& selected_algo, int new_algo);
+static void set_array_size(std::vector<int>& arr, std::vector<std::unique_ptr<SortingAlgo>>& algorithms, int selected_algo, int new_size);
 static void render_bars(const std::vector<int>& arr, int hi1, int hi2, ImU32 color1, ImU32 color2);
 static void render_stats(const char* algo_name);
 static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<SortingAlgo>>& algorithms, int& selected_algo);
@@ -73,7 +78,7 @@ int main(int argc, char** argv) {
     algorithms.emplace_back(std::make_unique<CombSort>());
     int selected_algo = 0;
     SortingAlgo* sorting_algo = algorithms[selected_algo].get();
-    sorting_algo->reset(ARRAY_SIZE);
+    sorting_algo->reset(g_array_size);
 
     bool done = false;
 
@@ -199,14 +204,14 @@ static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::un
                             g_num_swaps = 0;
                             g_num_compar = 0;
                         }
-                        algorithms[selected_algo]->reset(ARRAY_SIZE);
+                        algorithms[selected_algo]->reset(g_array_size);
                     }
                     g_sorting_done = false;
                     g_sorting_paused = false;
                 }
             } else if (event.key.keysym.sym == SDLK_BACKSPACE) {
                 init_array(arr);
-                algorithms[selected_algo]->reset(ARRAY_SIZE);
+                algorithms[selected_algo]->reset(g_array_size);
                 g_sorting_done = true;
                 g_sorting_paused = true;
             } else if (event.key.keysym.sym == SDLK_UP) {
@@ -221,6 +226,10 @@ static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::un
                     const int new_algo = (selected_algo + 1) % algo_count;
                     switch_algorithm(arr, algorithms, selected_algo, new_algo);
                 }
+            } else if (event.key.keysym.sym == SDLK_LEFT) {
+                set_array_size(arr, algorithms, selected_algo, g_array_size - ARRAY_SIZE_STEP);
+            } else if (event.key.keysym.sym == SDLK_RIGHT) {
+                set_array_size(arr, algorithms, selected_algo, g_array_size + ARRAY_SIZE_STEP);
             }
         }
     }
@@ -285,13 +294,13 @@ static int init_imgui() {
 }
 
 static void init_array(std::vector<int>& arr) {
-    arr.resize(ARRAY_SIZE);
-    for (int i = 0; i < ARRAY_SIZE; ++i) {
+    arr.resize(g_array_size);
+    for (int i = 0; i < g_array_size; ++i) {
         arr[i] = i + 1;
     }
     // Shuffle
     std::srand((unsigned int)std::time(nullptr));
-    for (int i = ARRAY_SIZE - 1; i >= 1; --i) {
+    for (int i = g_array_size - 1; i >= 1; --i) {
         int j = std::rand() % (i + 1);
         std::swap(arr[i], arr[j]);
     }
@@ -306,9 +315,22 @@ static void switch_algorithm(std::vector<int>& arr, std::vector<std::unique_ptr<
 
     (void)arr;
     selected_algo = new_algo;
-    algorithms[selected_algo]->reset(ARRAY_SIZE);
+    algorithms[selected_algo]->reset(g_array_size);
     g_num_swaps = 0;
     g_num_compar = 0;
+    g_sorting_done = true;
+    g_sorting_paused = true;
+}
+
+static void set_array_size(std::vector<int>& arr, std::vector<std::unique_ptr<SortingAlgo>>& algorithms, int selected_algo, int new_size) {
+    const int clamped_size = std::clamp(new_size, MIN_ARRAY_SIZE, MAX_ARRAY_SIZE);
+    if (clamped_size == g_array_size) {
+        return;
+    }
+
+    g_array_size = clamped_size;
+    init_array(arr);
+    algorithms[selected_algo]->reset(g_array_size);
     g_sorting_done = true;
     g_sorting_paused = true;
 }
@@ -327,19 +349,24 @@ static void render_bars(const std::vector<int>& arr, int hi1, int hi2, ImU32 col
     ImVec2 p = ImGui::GetCursorScreenPos();
     ImVec2 avail = ImGui::GetContentRegionAvail();
 
-    const float bar_width = (avail.x - (ARRAY_SIZE - 1) * BAR_SPACING) / ARRAY_SIZE;
+    const int bar_count = (int)arr.size();
+    const float bar_width = (avail.x - (bar_count - 1) * BAR_SPACING) / bar_count;
     const float bar_max_height = avail.y;
 
-    for (int i = 0; i < ARRAY_SIZE; ++i) {
-        float h = (arr[i] / (float)ARRAY_SIZE) * bar_max_height;
+    for (int i = 0; i < bar_count; ++i) {
+        float h = (arr[i] / (float)bar_count) * bar_max_height;
         float x0 = p.x + i * (bar_width + BAR_SPACING);
         float y0 = p.y + (bar_max_height - h);
         float x1 = x0 + bar_width;
         float y1 = p.y + bar_max_height;
 
         ImU32 col = IM_COL32(220, 220, 220, 255);
-        if (i == hi1) col = color1;
-        if (i == hi2) col = color2;
+        if (i == hi1) {
+            col = color1;
+        }
+        if (i == hi2) {
+            col = color2;
+        }
 
         draw_list->AddRectFilled(ImVec2(x0, y0), ImVec2(x1, y1), col);
     }
@@ -413,7 +440,7 @@ static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<S
                     g_num_swaps = 0;
                     g_num_compar = 0;
                 }
-                algorithms[selected_algo]->reset(ARRAY_SIZE);
+                algorithms[selected_algo]->reset(g_array_size);
             }
             g_sorting_done = false;
             g_sorting_paused = false;
@@ -423,9 +450,18 @@ static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<S
     ImGui::SameLine();
     if (ImGui::Button("Shuffle")) {
         init_array(arr);
-        algorithms[selected_algo]->reset(ARRAY_SIZE);
+        algorithms[selected_algo]->reset(g_array_size);
         g_sorting_done = true;
         g_sorting_paused = true;
+    }
+
+    static int slider_array_size = g_array_size;
+    if (!ImGui::IsAnyItemActive()) {
+        slider_array_size = g_array_size;
+    }
+    ImGui::SliderInt("Array size", &slider_array_size, MIN_ARRAY_SIZE, MAX_ARRAY_SIZE);
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+        set_array_size(arr, algorithms, selected_algo, slider_array_size);
     }
 
     ImGui::End();
