@@ -183,3 +183,36 @@ private:
     int m_sift_child = 0;
     int m_sift_stage = 0;
 };
+
+// Class for Merge Sort algorithm
+class MergeSort : public SortingAlgo {
+public:
+    const char* name() const override;
+
+    void reset(int size) override;
+    SortStepResult step(std::vector<int>& arr) override;
+
+private:
+    static constexpr int INSERTION_SORT_THRESHOLD = 4;
+
+    int m_size = 0;
+    std::vector<int> m_buffer;
+
+    int m_width = 1;
+    int m_left = 0;
+
+    bool m_in_pre_insertion = false;
+    int m_run_lo = 0;
+    int m_run_hi = 0;
+    int m_ins_i = 0;
+    int m_ins_j = 0;
+
+    bool m_merge_active = false;
+    bool m_copying_back = false;
+    int m_mid = 0;
+    int m_right = 0;
+    int m_i = 0;
+    int m_j = 0;
+    int m_k = 0;
+    int m_copy_idx = 0;
+};

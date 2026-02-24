@@ -691,3 +691,157 @@ SortStepResult HeapSort::step(std::vector<int>& arr) {
     }
 }
 
+/* MERGE SORT IMPLEMENTATION */
+const char* MergeSort::name() const {
+    return "Merge Sort";
+}
+
+void MergeSort::reset(int size) {
+    m_size = size;
+    m_buffer.assign(size, 0);
+
+    m_width = std::max(1, INSERTION_SORT_THRESHOLD);
+    m_left = 0;
+
+    m_in_pre_insertion = (m_width > 1 && size > 1);
+    m_run_lo = 0;
+    m_run_hi = std::min(m_width - 1, size - 1);
+    m_ins_i = m_run_lo + 1;
+    m_ins_j = m_ins_i;
+
+    m_merge_active = false;
+    m_copying_back = false;
+    m_mid = 0;
+    m_right = 0;
+    m_i = 0;
+    m_j = 0;
+    m_k = 0;
+    m_copy_idx = 0;
+
+    m_done = (size <= 1);
+}
+
+SortStepResult MergeSort::step(std::vector<int>& arr) {
+    SortStepResult result;
+
+    if (m_done || m_size <= 1 || (int)arr.size() < m_size) {
+        result.done = true;
+        m_done = true;
+        return result;
+    }
+
+    while (true) {
+        if (m_in_pre_insertion) {
+            if (m_run_lo >= m_size) {
+                m_in_pre_insertion = false;
+                continue;
+            }
+
+            if (m_ins_i > m_run_hi) {
+                m_run_lo = m_run_hi + 1;
+                if (m_run_lo >= m_size) {
+                    m_in_pre_insertion = false;
+                    continue;
+                }
+
+                m_run_hi = std::min(m_run_lo + m_width - 1, m_size - 1);
+                m_ins_i = m_run_lo + 1;
+                m_ins_j = m_ins_i;
+                continue;
+            }
+
+            if (m_ins_j <= m_run_lo) {
+                ++m_ins_i;
+                m_ins_j = m_ins_i;
+                continue;
+            }
+
+            result.hi1 = m_ins_j - 1;
+            result.hi2 = m_ins_j;
+            result.compared = true;
+            if (arr[m_ins_j - 1] > arr[m_ins_j]) {
+                std::swap(arr[m_ins_j - 1], arr[m_ins_j]);
+                result.swapped = true;
+                --m_ins_j;
+            } else {
+                ++m_ins_i;
+                m_ins_j = m_ins_i;
+            }
+            return result;
+        }
+
+        if (!m_merge_active) {
+            if (m_width >= m_size) {
+                m_done = true;
+                result.done = true;
+                return result;
+            }
+
+            if (m_left >= m_size - m_width) {
+                m_width *= 2;
+                m_left = 0;
+                continue;
+            }
+
+            m_mid = m_left + m_width - 1;
+            m_right = std::min(m_left + (2 * m_width) - 1, m_size - 1);
+            m_i = m_left;
+            m_j = m_mid + 1;
+            m_k = m_left;
+            m_copy_idx = m_left;
+            m_copying_back = false;
+            m_merge_active = true;
+            continue;
+        }
+
+        if (!m_copying_back) {
+            if (m_i <= m_mid && m_j <= m_right) {
+                result.hi1 = m_i;
+                result.hi2 = m_j;
+                result.compared = true;
+                if (arr[m_i] <= arr[m_j]) {
+                    m_buffer[m_k] = arr[m_i];
+                    ++m_i;
+                } else {
+                    m_buffer[m_k] = arr[m_j];
+                    ++m_j;
+                }
+                ++m_k;
+                return result;
+            }
+
+            while (m_i <= m_mid) {
+                m_buffer[m_k] = arr[m_i];
+                ++m_i;
+                ++m_k;
+            }
+            while (m_j <= m_right) {
+                m_buffer[m_k] = arr[m_j];
+                ++m_j;
+                ++m_k;
+            }
+
+            m_copying_back = true;
+            continue;
+        }
+
+        if (m_copy_idx <= m_right) {
+            arr[m_copy_idx] = m_buffer[m_copy_idx];
+            result.hi1 = m_copy_idx;
+            result.hi2 = m_copy_idx;
+            result.swapped = true;
+            ++m_copy_idx;
+
+            if (m_copy_idx > m_right) {
+                m_merge_active = false;
+                m_left += 2 * m_width;
+            }
+
+            return result;
+        }
+
+        m_merge_active = false;
+        m_left += 2 * m_width;
+    }
+}
+

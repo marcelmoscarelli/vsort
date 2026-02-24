@@ -1,14 +1,13 @@
-# outputs
-*.exe
-*.o
-*.obj
+# outputs and binaries
+build/
 bin/
-
-# binaries
+*.o
+*.d
 *.dll
+*.exe
 
 # junk
 .vscode/
 *.swp
 *.tmp
-imgui.ini
+*.ini

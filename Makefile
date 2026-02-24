@@ -1,5 +1,6 @@
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra
+DEPFLAGS := -MMD -MP
 
 SDL_CFLAGS := $(shell pkg-config --cflags sdl2)
 SDL_LIBS := $(filter-out -mwindows,$(shell pkg-config --libs sdl2))
@@ -17,7 +18,9 @@ IMGUI_SRC := \
 	$(IMGUI_BACKENDS)/imgui_impl_sdlrenderer2.cpp
 
 SRC := vsort.cpp sorting_algo.cpp $(IMGUI_SRC)
-OBJ := $(SRC:.cpp=.o)
+BUILD_DIR := build
+OBJ := $(addprefix $(BUILD_DIR)/,$(SRC:.cpp=.o))
+DEP := $(OBJ:.o=.d)
 
 BIN_DIR := bin
 TARGET := $(BIN_DIR)/vsort
@@ -38,13 +41,16 @@ endif
 $(TARGET): $(OBJ) | $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(SDL_LIBS)
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(SDL_CFLAGS) -I$(IMGUI_DIR) -I$(IMGUI_BACKENDS) -c $< -o $@
+$(BUILD_DIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(DEPFLAGS) $(SDL_CFLAGS) -I$(IMGUI_DIR) -I$(IMGUI_BACKENDS) -c $< -o $@
 
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -rf $(BUILD_DIR) $(TARGET)
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
 .PHONY: all clean run run-nvidia
+
+-include $(DEP)
