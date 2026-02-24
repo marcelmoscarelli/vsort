@@ -4,7 +4,7 @@
 
 A sorting visualizer using ImGui and SDL2 as rendering backend.
 
-There is not much to see here, yet.
+Work in progress, more algorithms will be added.
 
 ## Dependencies
 

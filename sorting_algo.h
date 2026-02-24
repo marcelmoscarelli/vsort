@@ -45,6 +45,23 @@ private:
     bool m_swapped_in_pass = false;
 };
 
+// Class for Selection Sort algorithm
+class SelectionSort : public SortingAlgo {
+public:
+    const char* name() const override;
+
+    void reset(int size) override;
+    SortStepResult step(std::vector<int>& arr) override;
+
+private:
+    int m_size = 0;
+    int m_i = 0;
+    int m_j = 1;
+    int m_min_idx = 0;
+    bool m_ready_to_swap = false;
+};
+
+
 // Class for Insertion Sort algorithm
 class InsertionSort : public SortingAlgo {
 public:
@@ -93,8 +110,8 @@ private:
     bool m_swapped_in_pass = false;
 };
 
-// Class for Selection Sort algorithm
-class SelectionSort : public SortingAlgo {
+// Class for Shell Sort algorithm
+class ShellSort : public SortingAlgo {
 public:
     const char* name() const override;
 
@@ -103,8 +120,42 @@ public:
 
 private:
     int m_size = 0;
+    std::vector<int> m_gaps;
+    int m_gap_idx = 0;
     int m_i = 0;
-    int m_j = 1;
-    int m_min_idx = 0;
-    bool m_ready_to_swap = false;
+    int m_j = 0;
+};
+
+// Class for Quick Sort algorithm
+class QuickSort : public SortingAlgo {
+public:
+    const char* name() const override;
+
+    void reset(int size) override;
+    SortStepResult step(std::vector<int>& arr) override;
+
+private:
+    struct Range {
+        int lo = 0;
+        int hi = 0;
+    };
+
+    static constexpr int INSERTION_SORT_THRESHOLD = 4;
+
+    int m_size = 0;
+    std::vector<Range> m_stack;
+
+    bool m_has_active_partition = false;
+    int m_lo = 0;
+    int m_hi = 0;
+    int m_lt = 0;
+    int m_i = 0;
+    int m_gt = 0;
+    int m_pivot = 0;
+
+    bool m_in_insertion = false;
+    int m_ins_lo = 0;
+    int m_ins_hi = 0;
+    int m_ins_i = 0;
+    int m_ins_j = 0;
 };

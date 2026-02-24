@@ -72,10 +72,12 @@ int main(int argc, char** argv) {
     init_array(arr);
     std::vector<std::unique_ptr<SortingAlgo>> algorithms;
     algorithms.emplace_back(std::make_unique<BubbleSort>());
-    algorithms.emplace_back(std::make_unique<InsertionSort>());
     algorithms.emplace_back(std::make_unique<SelectionSort>());
+    algorithms.emplace_back(std::make_unique<InsertionSort>());
     algorithms.emplace_back(std::make_unique<CocktailSort>());
     algorithms.emplace_back(std::make_unique<CombSort>());
+    algorithms.emplace_back(std::make_unique<ShellSort>());
+    algorithms.emplace_back(std::make_unique<QuickSort>());
     int selected_algo = 0;
     SortingAlgo* sorting_algo = algorithms[selected_algo].get();
     sorting_algo->reset(g_array_size);
@@ -409,10 +411,13 @@ static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<S
     for (const auto& algo : algorithms) {
         max_algo_name_width = std::max(max_algo_name_width, ImGui::CalcTextSize(algo->name()).x);
     }
-    const float combo_width = std::clamp(max_algo_name_width + 40.0f, 120.0f, 220.0f);
+    const float combo_width = max_algo_name_width + 34.0f; //std::clamp(max_algo_name_width + 40.0f, 120.0f, 220.0f);
     ImGui::SetNextItemWidth(combo_width);
     if (ImGui::BeginCombo("##Algorithm", current_name)) {
         for (int i = 0; i < (int)algorithms.size(); ++i) {
+            // if ((int)algorithms.size() >= 3 && i == (int)algorithms.size() - 2) {
+            //     ImGui::Separator();
+            // }
             const bool is_selected = (selected_algo == i);
             if (ImGui::Selectable(algorithms[i]->name(), is_selected)) {
                 switch_algorithm(arr, algorithms, selected_algo, i);
