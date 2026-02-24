@@ -6,6 +6,30 @@ A sorting visualizer using ImGui and SDL2 as rendering backend.
 
 Work in progress, more algorithms will be added.
 
+### Supported Algorithms
+
+O(n^2)
+
+- Bubble Sort
+
+- Selection Sort
+
+- Insertion Sort
+
+- Comb Sort (w/ 1.3 gap factor and, in practice, performs much better than O(n²))
+
+O(n^(3/2))
+
+- Shell Sort (w/ Ciura constants as gap factors, then 2.25)
+
+O(n log n)
+
+- Quick Sort (w/ Middle Pivot, 3-way partition, Insertion Sort base case)
+
+- Heap Sort
+
+- Merge Sort (w/ Insertion Sort base case)
+
 ## Dependencies
 
 ### Linux
