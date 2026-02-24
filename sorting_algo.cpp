@@ -556,3 +556,138 @@ SortStepResult QuickSort::step(std::vector<int>& arr) {
     }
 }
 
+/* HEAP SORT IMPLEMENTATION */
+const char* HeapSort::name() const {
+    return "Heap Sort";
+}
+
+void HeapSort::reset(int size) {
+    m_size = size;
+    m_building_heap = true;
+    m_build_index = (size / 2) - 1;
+    m_extract_end = size - 1;
+    m_sift_active = false;
+    m_sift_root = 0;
+    m_sift_end = 0;
+    m_sift_left = 0;
+    m_sift_right = 0;
+    m_sift_child = 0;
+    m_sift_stage = 0;
+    m_done = (size <= 1);
+}
+
+SortStepResult HeapSort::step(std::vector<int>& arr) {
+    SortStepResult result;
+
+    if (m_done || m_size <= 1 || (int)arr.size() < m_size) {
+        result.done = true;
+        m_done = true;
+        return result;
+    }
+
+    while (true) {
+        if (!m_sift_active) {
+            if (m_building_heap) {
+                if (m_build_index < 0) {
+                    m_building_heap = false;
+                    m_extract_end = m_size - 1;
+                    continue;
+                }
+
+                m_sift_root = m_build_index;
+                m_sift_end = m_size - 1;
+                m_sift_stage = 0;
+                m_sift_active = true;
+                continue;
+            }
+
+            if (m_extract_end <= 0) {
+                m_done = true;
+                result.done = true;
+                return result;
+            }
+
+            result.hi1 = 0;
+            result.hi2 = m_extract_end;
+            if (m_extract_end != 0) {
+                std::swap(arr[0], arr[m_extract_end]);
+                result.swapped = true;
+            }
+
+            if (m_extract_end - 1 > 0) {
+                m_sift_root = 0;
+                m_sift_end = m_extract_end - 1;
+                m_sift_stage = 0;
+                m_sift_active = true;
+            } else {
+                --m_extract_end;
+                if (m_extract_end <= 0) {
+                    m_done = true;
+                    result.done = true;
+                }
+            }
+
+            return result;
+        }
+
+        if (m_sift_stage == 0) {
+            m_sift_left = (2 * m_sift_root) + 1;
+            if (m_sift_left > m_sift_end) {
+                m_sift_active = false;
+                if (m_building_heap) {
+                    --m_build_index;
+                } else {
+                    --m_extract_end;
+                    if (m_extract_end <= 0) {
+                        m_done = true;
+                        result.done = true;
+                        return result;
+                    }
+                }
+                continue;
+            }
+
+            m_sift_right = m_sift_left + 1;
+            m_sift_child = m_sift_left;
+            if (m_sift_right <= m_sift_end) {
+                m_sift_stage = 1;
+            } else {
+                m_sift_stage = 2;
+            }
+        }
+
+        if (m_sift_stage == 1) {
+            result.hi1 = m_sift_left;
+            result.hi2 = m_sift_right;
+            result.compared = true;
+            if (arr[m_sift_left] < arr[m_sift_right]) {
+                m_sift_child = m_sift_right;
+            }
+            m_sift_stage = 2;
+            return result;
+        }
+
+        result.hi1 = m_sift_root;
+        result.hi2 = m_sift_child;
+        result.compared = true;
+        if (arr[m_sift_root] < arr[m_sift_child]) {
+            std::swap(arr[m_sift_root], arr[m_sift_child]);
+            result.swapped = true;
+            m_sift_root = m_sift_child;
+            m_sift_stage = 0;
+        } else {
+            m_sift_active = false;
+            if (m_building_heap) {
+                --m_build_index;
+            } else {
+                --m_extract_end;
+                if (m_extract_end <= 0) {
+                    m_done = true;
+                    result.done = true;
+                }
+            }
+        }
+        return result;
+    }
+}
+

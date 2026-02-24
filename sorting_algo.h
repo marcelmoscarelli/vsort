@@ -159,3 +159,27 @@ private:
     int m_ins_i = 0;
     int m_ins_j = 0;
 };
+
+// Class for Heap Sort algorithm
+class HeapSort : public SortingAlgo {
+public:
+    const char* name() const override;
+
+    void reset(int size) override;
+    SortStepResult step(std::vector<int>& arr) override;
+
+private:
+    int m_size = 0;
+
+    bool m_building_heap = true;
+    int m_build_index = 0;
+    int m_extract_end = 0;
+
+    bool m_sift_active = false;
+    int m_sift_root = 0;
+    int m_sift_end = 0;
+    int m_sift_left = 0;
+    int m_sift_right = 0;
+    int m_sift_child = 0;
+    int m_sift_stage = 0;
+};

@@ -78,6 +78,7 @@ int main(int argc, char** argv) {
     algorithms.emplace_back(std::make_unique<CombSort>());
     algorithms.emplace_back(std::make_unique<ShellSort>());
     algorithms.emplace_back(std::make_unique<QuickSort>());
+    algorithms.emplace_back(std::make_unique<HeapSort>());
     int selected_algo = 0;
     SortingAlgo* sorting_algo = algorithms[selected_algo].get();
     sorting_algo->reset(g_array_size);
