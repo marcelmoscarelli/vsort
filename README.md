@@ -58,9 +58,9 @@ Get the following:
 
 - `make run`
 
-## Controls
+## How to use
 
-Apart from the GUI, there are a few keyboard shortcuts that let you control the simulation without touching the mouse:
+Apart from the GUI controls, there are a few keyboard shortcuts that let you control the simulation without touching the mouse:
 
 - Backspace: Shuffle the array
 
@@ -69,5 +69,9 @@ Apart from the GUI, there are a few keyboard shortcuts that let you control the 
 - Up arrow and down arrow: Cycle through algorithms
 
 - Left arrow and right arrow: Resize the array
+
+- Plus and minus (not from numpad): Adjust the FPS cap
+
+- Zero (not from numpad): Set FPS to uncapped
 
 - Esc: Quit
