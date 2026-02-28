@@ -13,8 +13,6 @@
 #include "imgui/backends/imgui_impl_sdlrenderer2.h"
 
 // Global constants
-static const int FPS = 0; // 0=uncapped
-static const float FPS_DELAY = (FPS > 0) ? (1000.0f / FPS) : 0.0f;
 static const int DEFAULT_ARRAY_SIZE = 100;
 static const int MIN_ARRAY_SIZE = 50;
 static const int MAX_ARRAY_SIZE = 500;
@@ -36,6 +34,7 @@ static bool g_sorting_done = true;
 static int g_window_width = WINDOW_WIDTH;
 static int g_window_height = WINDOW_HEIGHT;
 static int g_array_size = DEFAULT_ARRAY_SIZE;
+static int g_fps_cap = 0; // 0=uncapped
 SDL_Window* g_window = nullptr;
 SDL_Renderer* g_renderer = nullptr;
 
@@ -147,8 +146,8 @@ int main(int argc, char** argv) {
         Uint32 target_frame_ms = 0;
         if (g_sorting_done || g_sorting_paused) { // 30 fps when paused/done to reduce load whilst keeping responsiveness
             target_frame_ms = 33;
-        } else if (FPS_DELAY > 0.0f) {
-            target_frame_ms = (Uint32)FPS_DELAY;
+        } else if (g_fps_cap > 0) {
+            target_frame_ms = (Uint32)(1000.0f / g_fps_cap);
             if (target_frame_ms == 0) {
                 target_frame_ms = 1;
             }
@@ -234,6 +233,16 @@ static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::un
                 set_array_size(arr, algorithms, selected_algo, g_array_size - ARRAY_SIZE_STEP);
             } else if (event.key.keysym.sym == SDLK_RIGHT) {
                 set_array_size(arr, algorithms, selected_algo, g_array_size + ARRAY_SIZE_STEP);
+            } else if (event.key.keysym.sym == SDLK_EQUALS || 
+                       (event.key.keysym.sym == SDLK_EQUALS && (event.key.keysym.mod & KMOD_SHIFT))) {
+                g_fps_cap += 30;
+            } else if (event.key.keysym.sym == SDLK_MINUS) {
+                g_fps_cap -= 30;
+                if (g_fps_cap < 0) {
+                    g_fps_cap = 0;
+                }
+            } else if (event.key.keysym.sym == SDLK_0) {
+                g_fps_cap = 0;
             }
         }
     }
@@ -469,6 +478,11 @@ static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<S
     ImGui::SliderInt("Array size", &slider_array_size, MIN_ARRAY_SIZE, MAX_ARRAY_SIZE);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
         set_array_size(arr, algorithms, selected_algo, slider_array_size);
+    }
+
+    ImGui::InputInt("FPS limit", &g_fps_cap, 30);
+    if (g_fps_cap < 0) {
+        g_fps_cap = 0;
     }
 
     ImGui::End();
