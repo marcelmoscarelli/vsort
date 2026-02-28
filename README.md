@@ -1,5 +1,7 @@
 # vsort
 
+<img width="1364" height="718" alt="vsort" src="https://github.com/user-attachments/assets/29eeeb7c-925b-4259-ba28-5c9409340ea3" />
+
 ## Description
 
 A sorting visualizer using ImGui and SDL2 as rendering backend.
