@@ -23,7 +23,6 @@ static const int STATS_LINE_COUNT = 5;
 static const float PADDING = 5.0f;
 static const float SECTION_GAP = PADDING;
 static const float FONT_SIZE = 17.0f;
-static const float BAR_SPACING = 2.0f;
 
 // Global variables
 static unsigned int g_num_swaps = 0;
@@ -35,6 +34,7 @@ static int g_window_width = WINDOW_WIDTH;
 static int g_window_height = WINDOW_HEIGHT;
 static int g_array_size = DEFAULT_ARRAY_SIZE;
 static int g_fps_cap = 0; // 0=uncapped
+static float g_bar_spacing = 2.0f; // 0-4, default 2
 SDL_Window* g_window = nullptr;
 SDL_Renderer* g_renderer = nullptr;
 
@@ -184,18 +184,21 @@ static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::un
             event.window.windowID == SDL_GetWindowID(g_window)) {
             done = true;
         }
+        // Window resize event
         if (event.type == SDL_WINDOWEVENT &&
             event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED &&
             event.window.windowID == SDL_GetWindowID(g_window)) {
             g_window_width = event.window.data1;
             g_window_height = event.window.data2;
             ImGui::GetIO().DisplaySize = ImVec2((float)g_window_width, (float)g_window_height);
+            //std::printf("Window resized: %d x %d\n", g_window_width, g_window_height);
         }
+        // Key down events
         if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
-            if (event.key.keysym.sym == SDLK_ESCAPE) {
+            if (event.key.keysym.sym == SDLK_ESCAPE) { // Esc to quit
                 done = true;
             }
-            else if (event.key.keysym.sym == SDLK_SPACE) {
+            else if (event.key.keysym.sym == SDLK_SPACE) { // Space to start/stop sorting
                 const bool is_running = !g_sorting_done && !g_sorting_paused;
                 if (is_running) {
                     g_sorting_paused = true;
@@ -212,37 +215,46 @@ static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::un
                     g_sorting_done = false;
                     g_sorting_paused = false;
                 }
-            } else if (event.key.keysym.sym == SDLK_BACKSPACE) {
+            } else if (event.key.keysym.sym == SDLK_BACKSPACE) { // Space to start/stop sorting
                 init_array(arr);
                 algorithms[selected_algo]->reset(g_array_size);
                 g_sorting_done = true;
                 g_sorting_paused = true;
-            } else if (event.key.keysym.sym == SDLK_UP) {
+            } else if (event.key.keysym.sym == SDLK_UP) { // Up/Down to change algorithm
                 const int algo_count = (int)algorithms.size();
                 if (algo_count > 0) {
                     const int new_algo = (selected_algo - 1 + algo_count) % algo_count;
                     switch_algorithm(arr, algorithms, selected_algo, new_algo);
                 }
-            } else if (event.key.keysym.sym == SDLK_DOWN) {
+            } else if (event.key.keysym.sym == SDLK_DOWN) { // Up/Down to change algorithm
                 const int algo_count = (int)algorithms.size();
                 if (algo_count > 0) {
                     const int new_algo = (selected_algo + 1) % algo_count;
                     switch_algorithm(arr, algorithms, selected_algo, new_algo);
                 }
-            } else if (event.key.keysym.sym == SDLK_LEFT) {
+            } else if (event.key.keysym.sym == SDLK_LEFT) { // Left/Right to change array size
                 set_array_size(arr, algorithms, selected_algo, g_array_size - ARRAY_SIZE_STEP);
-            } else if (event.key.keysym.sym == SDLK_RIGHT) {
+            } else if (event.key.keysym.sym == SDLK_RIGHT) { // Left/Right to change array size
                 set_array_size(arr, algorithms, selected_algo, g_array_size + ARRAY_SIZE_STEP);
-            } else if (event.key.keysym.sym == SDLK_EQUALS || 
-                       (event.key.keysym.sym == SDLK_EQUALS && (event.key.keysym.mod & KMOD_SHIFT))) {
+            } else if (event.key.keysym.sym == SDLK_EQUALS) { // +/- to change FPS cap
                 g_fps_cap += 30;
-            } else if (event.key.keysym.sym == SDLK_MINUS) {
+            } else if (event.key.keysym.sym == SDLK_MINUS) { // +/- to change FPS cap
                 g_fps_cap -= 30;
                 if (g_fps_cap < 0) {
                     g_fps_cap = 0;
                 }
-            } else if (event.key.keysym.sym == SDLK_0) {
+            } else if (event.key.keysym.sym == SDLK_0) { // 0 to remove FPS cap
                 g_fps_cap = 0;
+            } else if (event.key.keysym.sym == SDLK_COMMA) { // </> to change bar spacing
+                g_bar_spacing -= 1.0f;
+                if (g_bar_spacing < 0.0f) {
+                    g_bar_spacing = 0.0f;
+                }
+            } else if (event.key.keysym.sym == SDLK_PERIOD) { // </> to change bar spacing
+                g_bar_spacing += 1.0f;
+                if (g_bar_spacing > 4.0f) {
+                    g_bar_spacing = 4.0f;
+                }
             }
         }
     }
@@ -268,6 +280,8 @@ static int init_sdl() {
         SDL_Quit();
         return 1;
     }
+
+    SDL_SetWindowMinimumSize(g_window, 885, 400);
 
     SDL_GetWindowSize(g_window, &g_window_width, &g_window_height);
     return 0;
@@ -363,12 +377,12 @@ static void render_bars(const std::vector<int>& arr, int hi1, int hi2, ImU32 col
     ImVec2 avail = ImGui::GetContentRegionAvail();
 
     const int bar_count = (int)arr.size();
-    const float bar_width = (avail.x - (bar_count - 1) * BAR_SPACING) / bar_count;
+    const float bar_width = (avail.x - (bar_count - 1) * g_bar_spacing) / bar_count;
     const float bar_max_height = avail.y;
 
     for (int i = 0; i < bar_count; ++i) {
         float h = (arr[i] / (float)bar_count) * bar_max_height;
-        float x0 = p.x + i * (bar_width + BAR_SPACING);
+        float x0 = p.x + i * (bar_width + g_bar_spacing);
         float y0 = p.y + (bar_max_height - h);
         float x1 = x0 + bar_width;
         float y1 = p.y + bar_max_height;
@@ -411,18 +425,20 @@ static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<S
     const float sorting_height = (float)g_window_height - stats_height - (PADDING * 2.0f) - SECTION_GAP;
     const float stats_y = PADDING + sorting_height + SECTION_GAP;
 
+    // Define the window size and position for the controls panel
     ImGui::SetNextWindowPos(ImVec2(g_window_width/2 + PADDING, stats_y), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2((float)g_window_width/2 - (PADDING * 2.0f), stats_height), ImGuiCond_Always);
 
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse;
     ImGui::Begin("Controls", nullptr, flags);
 
+    // Dropdown menu for algorithm selection
     const char* current_name = algorithms[selected_algo]->name();
     float max_algo_name_width = 0.0f;
     for (const auto& algo : algorithms) {
         max_algo_name_width = std::max(max_algo_name_width, ImGui::CalcTextSize(algo->name()).x);
     }
-    const float combo_width = max_algo_name_width + 34.0f; //std::clamp(max_algo_name_width + 40.0f, 120.0f, 220.0f);
+    const float combo_width = max_algo_name_width + 34.0f; // 34.0f is an arbitrary extra width
     ImGui::SetNextItemWidth(combo_width);
     if (ImGui::BeginCombo("##Algorithm", current_name)) {
         for (int i = 0; i < (int)algorithms.size(); ++i) {
@@ -440,6 +456,7 @@ static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<S
         ImGui::EndCombo();
     }
     ImGui::SameLine();
+    // Start/Stop button
     const bool is_running = !g_sorting_done && !g_sorting_paused;
     const float start_label_width = ImGui::CalcTextSize("Start").x;
     const float stop_label_width = ImGui::CalcTextSize("Stop").x;
@@ -464,6 +481,7 @@ static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<S
     }
     ImGui::PopStyleVar();
     ImGui::SameLine();
+    // Shuffle button
     if (ImGui::Button("Shuffle")) {
         init_array(arr);
         algorithms[selected_algo]->reset(g_array_size);
@@ -471,16 +489,20 @@ static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<S
         g_sorting_paused = true;
     }
 
+    // Slider for array size selection
     static int slider_array_size = g_array_size;
     if (!ImGui::IsAnyItemActive()) {
         slider_array_size = g_array_size;
     }
-    ImGui::SliderInt("Array size", &slider_array_size, MIN_ARRAY_SIZE, MAX_ARRAY_SIZE);
+    ImGui::SetNextItemWidth(combo_width);
+    ImGui::SliderInt(" Array size", &slider_array_size, MIN_ARRAY_SIZE, MAX_ARRAY_SIZE);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
         set_array_size(arr, algorithms, selected_algo, slider_array_size);
     }
 
-    ImGui::InputInt("FPS limit", &g_fps_cap, 30);
+    // Text box for FPS cap selection
+    ImGui::SetNextItemWidth(combo_width);
+    ImGui::InputInt(" FPS cap", &g_fps_cap, 30);
     if (g_fps_cap < 0) {
         g_fps_cap = 0;
     }

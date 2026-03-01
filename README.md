@@ -76,4 +76,6 @@ Apart from the GUI controls, there are a few keyboard shortcuts that let you con
 
 - Zero (not from numpad): Set FPS to uncapped
 
+- < and >: Change the bar spacing between 0-4
+
 - Esc: Quit
