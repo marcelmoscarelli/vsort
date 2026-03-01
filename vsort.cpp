@@ -16,7 +16,6 @@
 static const int DEFAULT_ARRAY_SIZE = 100;
 static const int MIN_ARRAY_SIZE = 50;
 static const int MAX_ARRAY_SIZE = 500;
-static const int ARRAY_SIZE_STEP = 50;
 static const int WINDOW_WIDTH = 1280;
 static const int WINDOW_HEIGHT = 720;
 static const int STATS_LINE_COUNT = 5;
@@ -30,6 +29,7 @@ static unsigned int g_num_compar = 0;
 static float g_fps = 0.0f;
 static bool g_sorting_paused = true;
 static bool g_sorting_done = true;
+static bool g_repeat_elements = false;
 static int g_window_width = WINDOW_WIDTH;
 static int g_window_height = WINDOW_HEIGHT;
 static int g_array_size = DEFAULT_ARRAY_SIZE;
@@ -232,10 +232,13 @@ static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::un
                     const int new_algo = (selected_algo + 1) % algo_count;
                     switch_algorithm(arr, algorithms, selected_algo, new_algo);
                 }
+            } else if (event.key.keysym.sym == SDLK_r) { // Toogle repeating elements on/off
+                g_repeat_elements = !g_repeat_elements;
+                init_array(arr);
             } else if (event.key.keysym.sym == SDLK_LEFT) { // Left/Right to change array size
-                set_array_size(arr, algorithms, selected_algo, g_array_size - ARRAY_SIZE_STEP);
+                set_array_size(arr, algorithms, selected_algo, g_array_size - 50);
             } else if (event.key.keysym.sym == SDLK_RIGHT) { // Left/Right to change array size
-                set_array_size(arr, algorithms, selected_algo, g_array_size + ARRAY_SIZE_STEP);
+                set_array_size(arr, algorithms, selected_algo, g_array_size + 50);
             } else if (event.key.keysym.sym == SDLK_EQUALS) { // +/- to change FPS cap
                 g_fps_cap += 30;
             } else if (event.key.keysym.sym == SDLK_MINUS) { // +/- to change FPS cap
@@ -322,15 +325,26 @@ static int init_imgui() {
 
 static void init_array(std::vector<int>& arr) {
     arr.resize(g_array_size);
-    for (int i = 0; i < g_array_size; ++i) {
-        arr[i] = i + 1;
+
+    if (!g_repeat_elements) {
+        for (int i = 0; i < g_array_size; ++i) {
+            arr[i] = i + 1;
+        }
+    } else {
+        // Adjust step based on array size to keep repeats reasonable
+        int step = std::max(1, g_array_size / 10);
+        for (int i = 0; i < g_array_size; ++i) {
+            arr[i] = ((i / step) + 1) * step;
+        }
     }
+
     // Shuffle
     std::srand((unsigned int)std::time(nullptr));
     for (int i = g_array_size - 1; i >= 1; --i) {
         int j = std::rand() % (i + 1);
         std::swap(arr[i], arr[j]);
     }
+
     g_num_swaps = 0;
     g_num_compar = 0;
 }
@@ -405,6 +419,7 @@ static void render_stats(const char* algo_name) {
     const float stats_height = calc_stats_height();
     const float sorting_height = (float)g_window_height - stats_height - (PADDING * 2.0f) - SECTION_GAP;
     const float stats_y = PADDING + sorting_height + SECTION_GAP;
+    int fps = (int)std::round(g_fps);
 
     ImGui::SetNextWindowPos(ImVec2(PADDING, stats_y), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2((float)g_window_width/2 - (PADDING * 2.0f), stats_height), ImGuiCond_Always);
@@ -415,7 +430,7 @@ static void render_stats(const char* algo_name) {
     ImGui::Text("Algorithm: %s\t", algo_name);
     ImGui::Text("Swaps: %u", g_num_swaps);
     ImGui::Text("Comparisons: %u", g_num_compar);
-    ImGui::Text("FPS: %.1f", g_fps);
+    ImGui::Text("FPS: %d", fps);
 
     ImGui::End();
 }

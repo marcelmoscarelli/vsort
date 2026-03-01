@@ -66,6 +66,8 @@ Apart from the GUI controls, there are a few keyboard shortcuts that let you con
 
 - Backspace: Shuffle the array
 
+- R: Toggle repeated elements on/off (and shuffle)
+
 - Space bar: Start or stop sorting
 
 - Up arrow and down arrow: Cycle through algorithms
