@@ -3,7 +3,12 @@ CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra
 DEPFLAGS := -MMD -MP
 
 SDL_CFLAGS := $(shell pkg-config --cflags sdl2)
-SDL_LIBS := $(filter-out -mwindows,$(shell pkg-config --libs sdl2))
+SDL_LIBS := $(shell pkg-config --libs sdl2)
+
+# Only add -mwindows on Windows builds
+ifneq ($(shell uname -s),Linux)
+SDL_LIBS += -mwindows
+endif
 
 IMGUI_DIR := imgui
 IMGUI_BACKENDS := $(IMGUI_DIR)/backends

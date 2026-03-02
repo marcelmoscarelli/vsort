@@ -1,13 +1,19 @@
 # outputs and binaries
+AppDir/
 build/
 bin/
 *.o
 *.d
 *.dll
 *.exe
+*.AppImage
 
 # junk
 .vscode/
 *.swp
 *.tmp
 *.ini
+
+# others
+*.desktop
+*.sh

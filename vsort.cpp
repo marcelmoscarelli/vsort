@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <fstream>
 #include <SDL2/SDL.h>
 #include "sorting_algo.h"
 #include "imgui/imgui.h"
@@ -234,7 +235,6 @@ static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::un
                 }
             } else if (event.key.keysym.sym == SDLK_r) { // Toogle repeating elements on/off
                 g_repeat_elements = !g_repeat_elements;
-                init_array(arr);
             } else if (event.key.keysym.sym == SDLK_LEFT) { // Left/Right to change array size
                 set_array_size(arr, algorithms, selected_algo, g_array_size - 50);
             } else if (event.key.keysym.sym == SDLK_RIGHT) { // Left/Right to change array size
@@ -284,7 +284,8 @@ static int init_sdl() {
         return 1;
     }
 
-    SDL_SetWindowMinimumSize(g_window, 885, 400);
+    // Minimum size to prevent controls from being unusable
+    SDL_SetWindowMinimumSize(g_window, 1170, 400);
 
     SDL_GetWindowSize(g_window, &g_window_width, &g_window_height);
     return 0;
@@ -302,22 +303,62 @@ static int init_imgui() {
     ImGui_ImplSDL2_InitForSDLRenderer(g_window, g_renderer);
     ImGui_ImplSDLRenderer2_Init(g_renderer);
 
-    // Load an external font
+    // Load an external font trying multiple paths for flexibility (dev build vs AppImage)
     char* base = SDL_GetBasePath();
     std::string base_str(base);
     SDL_free(base);
-    std::replace(base_str.begin(), base_str.end(), '\\', '/'); // Not really needed, but...
-    if (base_str.empty()) {
-        fprintf(stderr, "SDL_GetBasePath failed: %s\n", SDL_GetError());
-        return 1;
+    std::replace(base_str.begin(), base_str.end(), '\\', '/');
+    
+    std::vector<std::string> font_paths;
+    
+    // Try $APPDIR first (AppImage environment variable)
+    const char* appdir = std::getenv("APPDIR");
+    if (appdir) {
+        font_paths.push_back(std::string(appdir) + "/usr/share/vsort/assets/DejaVuSansMono.ttf");
     }
-    std::string font_path = base_str + "../assets/DejaVuSansMono.ttf";
-    ImFont* font = ImGui::GetIO().Fonts->AddFontFromFileTTF(font_path.c_str(), FONT_SIZE);
+    
+    // Try AppImage structure (executable in usr/bin, assets in usr/share/vsort/assets)
+    font_paths.push_back(base_str + "../../share/vsort/assets/DejaVuSansMono.ttf");
+    
+    // Try relative paths (development build)
+    font_paths.push_back(base_str + "../assets/DejaVuSansMono.ttf");
+    
+    // Try system fonts as last resort
+    font_paths.push_back("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
+    
+    ImFont* font = nullptr;
+    std::string loaded_path;
+    
+    fprintf(stdout, "Attempting to load font from:\n");
+    for (const auto& path : font_paths) {
+        fprintf(stdout, "  Trying: %s\n", path.c_str());
+        
+        // Check if file exists first to avoid ImGui bad habit of crashing on missing files instead of just returning nullptr (meh)
+        std::ifstream file_check(path);
+        if (!file_check.good()) {
+            fprintf(stdout, "    File not found, skipping\n");
+            continue;
+        }
+        file_check.close();
+        
+        // Clear any previous font load attempts
+        ImGui::GetIO().Fonts->Clear();
+        
+        font = ImGui::GetIO().Fonts->AddFontFromFileTTF(path.c_str(), FONT_SIZE);
+        if (font) {
+            loaded_path = path;
+            fprintf(stdout, "    ✓ Success!\n");
+            break;
+        } else {
+            fprintf(stdout, "    Failed to load (file exists but imgui error)\n");
+        }
+    }
+    
     if (font) {
         ImGui::GetIO().FontDefault = font;
-        fprintf(stdout, "Font loaded from: %s\n", font_path.c_str());
+        fprintf(stdout, "Font loaded from: %s\n", loaded_path.c_str());
     } else {
-        fprintf(stderr, "AddFontFromFileTTF() failed to load font at path: %s\n", font_path.c_str());
+        fprintf(stderr, "ERROR: Could not load font from any path\n");
         return 1;
     }
     return 0;
@@ -332,7 +373,7 @@ static void init_array(std::vector<int>& arr) {
         }
     } else {
         // Adjust step based on array size to keep repeats reasonable
-        int step = std::max(1, g_array_size / 10);
+        int step = std::max(1, g_array_size / 5);
         for (int i = 0; i < g_array_size; ++i) {
             arr[i] = ((i / step) + 1) * step;
         }
@@ -503,20 +544,23 @@ static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<S
         g_sorting_done = true;
         g_sorting_paused = true;
     }
+    ImGui::SameLine();
+    // Checkbox for repeating elements
+    if (ImGui::Checkbox("Repeat nums?", &g_repeat_elements)) {}
 
     // Slider for array size selection
     static int slider_array_size = g_array_size;
     if (!ImGui::IsAnyItemActive()) {
         slider_array_size = g_array_size;
     }
-    ImGui::SetNextItemWidth(combo_width);
+    ImGui::SetNextItemWidth(combo_width / 2);
     ImGui::SliderInt(" Array size", &slider_array_size, MIN_ARRAY_SIZE, MAX_ARRAY_SIZE);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
         set_array_size(arr, algorithms, selected_algo, slider_array_size);
     }
 
     // Text box for FPS cap selection
-    ImGui::SetNextItemWidth(combo_width);
+    ImGui::SetNextItemWidth(combo_width / 2);
     ImGui::InputInt(" FPS cap", &g_fps_cap, 30);
     if (g_fps_cap < 0) {
         g_fps_cap = 0;
