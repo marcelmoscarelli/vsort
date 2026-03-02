@@ -322,6 +322,7 @@ static int init_imgui() {
     
     // Try relative paths (development build)
     font_paths.push_back(base_str + "../assets/DejaVuSansMono.ttf");
+    font_paths.push_back(base_str + "assets/DejaVuSansMono.ttf");
     
     // Try system fonts as last resort
     font_paths.push_back("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
