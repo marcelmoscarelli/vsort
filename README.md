@@ -8,6 +8,8 @@ A sorting visualizer using ImGui and SDL2 as rendering backend.
 
 Work in progress, more algorithms will be added.
 
+First public beta was released on 01/mar/26.
+
 ### Supported Algorithms
 
 O(n^2)
@@ -32,9 +34,9 @@ O(n log n)
 
 - Merge Sort (w/ Insertion Sort base case)
 
-## Dependencies
+## Building
 
-### Linux
+### Linux dependencies
 
 Get the following with your package manager:
 
@@ -46,7 +48,7 @@ Get the following with your package manager:
 
 - libsdl2-dev
 
-### Windows
+### Windows dependencies
 
 Get the following:
 
@@ -56,7 +58,9 @@ Get the following:
 - [libsdl2-dev](https://github.com/libsdl-org/SDL/releases/download/release-2.32.10/SDL2-devel-2.32.10-mingw.zip)
 (extract it somewhere then add its \lib\pkgconfig folder to the PKG_CONFIG_PATH variable)
 
-## Run
+### Build and Run
+
+- `make`
 
 - `make run`
 
