@@ -1,4 +1,4 @@
-CXX ?= g++
+CXX ?= c++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra
 DEPFLAGS := -MMD -MP
 
@@ -6,7 +6,7 @@ SDL_CFLAGS := $(shell pkg-config --cflags sdl2)
 SDL_LIBS := $(shell pkg-config --libs sdl2)
 
 # Only add -mwindows on Windows builds
-ifneq ($(shell uname -s),Linux)
+ifeq ($(OS),Windows_NT)
 SDL_LIBS += -mwindows
 endif
 
@@ -35,14 +35,6 @@ all: $(TARGET)
 run: $(TARGET)
 	./$(TARGET)
 
-ifeq ($(shell uname -s),Linux)
-run-nvidia: $(TARGET)
-	__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia ./$(TARGET)
-else
-run-nvidia:
-	@echo "run-nvidia is only available on Linux"
-endif
-
 $(TARGET): $(OBJ) | $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(SDL_LIBS)
 
@@ -56,6 +48,6 @@ clean:
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-.PHONY: all clean run run-nvidia
+.PHONY: all clean run
 
 -include $(DEP)
