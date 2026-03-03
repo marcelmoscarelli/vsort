@@ -68,20 +68,14 @@ Get the following:
 
 Apart from the GUI controls, there are a few keyboard shortcuts that let you control the simulation without touching the mouse:
 
-- Backspace: Shuffle the array
-
-- R: Toggle repeated elements
-
-- Space bar: Start or stop sorting
-
-- Up arrow and down arrow: Cycle through algorithms
-
-- Left arrow and right arrow: Resize the array
-
-- Plus and minus (not from numpad): Adjust the FPS cap
-
-- Zero (not from numpad): Set FPS to uncapped
-
-- < and >: Change the bar spacing between 0-4
-
-- Esc: Quit
+| Key | Action |
+| :--- | :--- |
+| <kbd>⌫ Backspace</kbd> | Shuffle the array |
+| <kbd>R</kbd> | Toggle repeated elements |
+| <kbd>␣ Space</kbd> | Start or stop sorting |
+| <kbd>↑</kbd> <kbd>↓</kbd> | Cycle through algorithms |
+| <kbd>←</kbd> <kbd>→</kbd> | Resize the array |
+| <kbd>+</kbd> <kbd>-</kbd> | Adjust the FPS cap (non-numpad) |
+| <kbd>0</kbd> | Set FPS to uncapped (non-numpad) |
+| <kbd>&lt;</kbd> <kbd>&gt;</kbd> | Change bar spacing (0-4) |
+| <kbd>⎋ Esc</kbd> | Quit |
