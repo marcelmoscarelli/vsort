@@ -8,7 +8,7 @@ A sorting visualizer using ImGui and SDL2 as rendering backend.
 
 Work in progress, more algorithms will be added.
 
-First public beta was released on 01/mar/26.
+First public beta was released on 01/mar/26 for Windows and Linux (x86_64). MacOS users can build using the intructions below.
 
 ### Supported Algorithms
 
@@ -36,21 +36,41 @@ O(n log n)
 
 ## Building
 
-### Linux dependencies
+### Getting Linux dependencies
 
-Get the following with your package manager:
+Debian/Ubuntu/Mint:
 
-- g++
+```bash
+sudo apt install g++ make pkg-config libsdl2-dev
+```
 
-- make
+Fedora/CentOS:
 
-- pkg-config
+```bash
+sudo dnf install gcc-c++ make pkgconf-pkg-config SDL2-devel
+```
 
-- libsdl2-dev
+Arch:
 
-### Windows dependencies
+```bash
+sudo pacman -S base-devel sdl2
+```
 
-Get the following:
+### Getting MacOS dependencies
+
+Run:
+
+```bash
+xcode-select --install
+```
+
+```bash
+brew install pkg-config sdl2
+```
+
+### Getting Windows dependencies
+
+Download the following:
 
 - [w64devkit](https://github.com/skeeto/w64devkit)
 (then add its bin folder to the PATH variable, so you can access build tools from cmd or pwsh)
@@ -60,9 +80,13 @@ Get the following:
 
 ### Build and Run
 
-- `make`
+```bash
+make
+```
 
-- `make run`
+```bash
+make run
+```
 
 ## How to use
 
