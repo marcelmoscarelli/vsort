@@ -94,12 +94,13 @@ Apart from the GUI controls, there are a few keyboard shortcuts that let you con
 
 | Key | Action |
 | :--- | :--- |
-| <kbd>⌫ Backspace</kbd> | Shuffle the array |
-| <kbd>R</kbd> | Toggle repeated elements |
-| <kbd>␣ Space</kbd> | Start or stop sorting |
-| <kbd>↑</kbd> <kbd>↓</kbd> | Cycle through algorithms |
-| <kbd>←</kbd> <kbd>→</kbd> | Resize the array |
-| <kbd>+</kbd> <kbd>-</kbd> | Adjust the FPS cap (non-numpad) |
-| <kbd>0</kbd> | Set FPS to uncapped (non-numpad) |
-| <kbd>&lt;</kbd> <kbd>&gt;</kbd> | Change bar spacing (0-4) |
-| <kbd>⎋ Esc</kbd> | Quit |
+| `⌫ Backspace` | Shuffle the array |
+| `R` | Toggle repeated elements |
+| `W` | Toggle weak shuffle |
+| `␣ Space` | Start or stop sorting |
+| `↑` `↓` | Cycle through algorithms |
+| `←` `→` | Resize the array |
+| `+` `-` | Adjust the FPS cap (non-numpad) |
+| `0` | Set FPS to uncapped (non-numpad) |
+| `<` `>` | Change bar spacing (0-4) |
+| `⎋ Esc` | Quit |

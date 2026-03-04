@@ -13,28 +13,32 @@
 #include "imgui/backends/imgui_impl_sdl2.h"
 #include "imgui/backends/imgui_impl_sdlrenderer2.h"
 
-// Global constants
-static const int DEFAULT_ARRAY_SIZE = 100;
+// Global constants for default settings
+static const int FPS = 0; // 0 for uncapped
+static const int ARRAY_SIZE = 100;
 static const int MIN_ARRAY_SIZE = 50;
 static const int MAX_ARRAY_SIZE = 500;
 static const int WINDOW_WIDTH = 1280;
 static const int WINDOW_HEIGHT = 720;
-static const int STATS_LINE_COUNT = 5;
+
+// Global constants for UI layout
+static const int STATS_LINE_COUNT = 6;
 static const float PADDING = 5.0f;
 static const float SECTION_GAP = PADDING;
 static const float FONT_SIZE = 17.0f;
 
 // Global variables
-static unsigned int g_num_swaps = 0;
-static unsigned int g_num_compar = 0;
-static float g_fps = 0.0f;
 static bool g_sorting_paused = true;
 static bool g_sorting_done = true;
 static bool g_repeat_elements = false;
+static bool g_weak_shuffle = false;
+static unsigned int g_num_swaps = 0;
+static unsigned int g_num_compar = 0;
 static int g_window_width = WINDOW_WIDTH;
 static int g_window_height = WINDOW_HEIGHT;
-static int g_array_size = DEFAULT_ARRAY_SIZE;
-static int g_fps_cap = 0; // 0=uncapped
+static int g_array_size = ARRAY_SIZE;
+static int g_fps_cap = FPS;
+static float g_fps = 0.0f;
 static float g_bar_spacing = 2.0f; // 0-4, default 2
 SDL_Window* g_window = nullptr;
 SDL_Renderer* g_renderer = nullptr;
@@ -192,7 +196,7 @@ static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::un
             g_window_width = event.window.data1;
             g_window_height = event.window.data2;
             ImGui::GetIO().DisplaySize = ImVec2((float)g_window_width, (float)g_window_height);
-            //std::printf("Window resized: %d x %d\n", g_window_width, g_window_height);
+            std::printf("Window resized: %d x %d\n", g_window_width, g_window_height);
         }
         // Key down events
         if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
@@ -235,6 +239,8 @@ static void handle_events(bool& done, std::vector<int>& arr, std::vector<std::un
                 }
             } else if (event.key.keysym.sym == SDLK_r) { // Toogle repeating elements on/off
                 g_repeat_elements = !g_repeat_elements;
+            } else if (event.key.keysym.sym == SDLK_w) { // Toogle weak shuffle on/off
+                g_weak_shuffle = !g_weak_shuffle;
             } else if (event.key.keysym.sym == SDLK_LEFT) { // Left/Right to change array size
                 set_array_size(arr, algorithms, selected_algo, g_array_size - 50);
             } else if (event.key.keysym.sym == SDLK_RIGHT) { // Left/Right to change array size
@@ -285,7 +291,7 @@ static int init_sdl() {
     }
 
     // Minimum size to prevent controls from being unusable
-    SDL_SetWindowMinimumSize(g_window, 1170, 400);
+    SDL_SetWindowMinimumSize(g_window, 890, 400);
 
     SDL_GetWindowSize(g_window, &g_window_width, &g_window_height);
     return 0;
@@ -382,9 +388,19 @@ static void init_array(std::vector<int>& arr) {
 
     // Shuffle
     std::srand((unsigned int)std::time(nullptr));
-    for (int i = g_array_size - 1; i >= 1; --i) {
-        int j = std::rand() % (i + 1);
-        std::swap(arr[i], arr[j]);
+    if (!g_weak_shuffle) {
+        for (int i = g_array_size - 1; i >= 1; --i) {
+            int j = std::rand() % (i + 1);
+            std::swap(arr[i], arr[j]);
+        }
+    } else {
+        // Nearly sorted: perform fewer swaps to keep array mostly in order
+        int num_swaps = std::max(1, g_array_size / 5);
+        for (int i = 0; i < num_swaps; ++i) {
+            int j = std::rand() % g_array_size;
+            int k = std::rand() % g_array_size;
+            std::swap(arr[j], arr[k]);
+        }
     }
 
     g_num_swaps = 0;
@@ -545,9 +561,11 @@ static void render_controls(std::vector<int>& arr, std::vector<std::unique_ptr<S
         g_sorting_done = true;
         g_sorting_paused = true;
     }
-    ImGui::SameLine();
+    //ImGui::SameLine();
     // Checkbox for repeating elements
     if (ImGui::Checkbox("Repeat nums?", &g_repeat_elements)) {}
+    ImGui::SameLine();
+    if (ImGui::Checkbox("Weak shuffle?", &g_weak_shuffle)) {}
 
     // Slider for array size selection
     static int slider_array_size = g_array_size;
